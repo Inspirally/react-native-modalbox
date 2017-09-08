@@ -1,7 +1,6 @@
 'use strict';
 
 var React = require('react');
-var PropTypes = require('prop-types');
 var {
   View,
   StyleSheet,
@@ -16,8 +15,6 @@ var {
   Modal,
   Keyboard
 } = require('react-native');
-
-var createReactClass = require('create-react-class');
 
 var BackButton = BackHandler || BackAndroid;
 
@@ -44,31 +41,31 @@ var styles = StyleSheet.create({
 
 });
 
-var ModalBox = createReactClass({
+var ModalBox = React.createClass({
 
   propTypes: {
-    isOpen: PropTypes.bool,
-    isDisabled: PropTypes.bool,
-    startOpen: PropTypes.bool,
-    backdropPressToClose: PropTypes.bool,
-    swipeToClose: PropTypes.bool,
-    swipeThreshold: PropTypes.number,
-    swipeArea: PropTypes.number,
-    position: PropTypes.string,
-    entry: PropTypes.string,
-    backdrop: PropTypes.bool,
-    backdropOpacity: PropTypes.number,
-    backdropColor: PropTypes.string,
-    backdropContent: PropTypes.element,
-    animationDuration: PropTypes.number,
-    backButtonClose: PropTypes.bool,
-    easing: PropTypes.func,
-    coverScreen: PropTypes.bool,
-    keyboardTopOffset: PropTypes.number,
+    isOpen: React.PropTypes.bool,
+    isDisabled: React.PropTypes.bool,
+    startOpen: React.PropTypes.bool,
+    backdropPressToClose: React.PropTypes.bool,
+    swipeToClose: React.PropTypes.bool,
+    swipeThreshold: React.PropTypes.number,
+    swipeArea: React.PropTypes.number,
+    position: React.PropTypes.string,
+    entry: React.PropTypes.string,
+    backdrop: React.PropTypes.bool,
+    backdropOpacity: React.PropTypes.number,
+    backdropColor: React.PropTypes.string,
+    backdropContent: React.PropTypes.element,
+    animationDuration: React.PropTypes.number,
+    backButtonClose: React.PropTypes.bool,
+    easing: React.PropTypes.func,
+    coverScreen: React.PropTypes.bool,
+    keyboardTopOffset: React.PropTypes.number,
 
-    onClosed: PropTypes.func,
-    onOpened: PropTypes.func,
-    onClosingState: PropTypes.func,
+    onClosed: React.PropTypes.func,
+    onOpened: React.PropTypes.func,
+    onClosingState: React.PropTypes.func,
   },
 
   getDefaultProps: function () {
@@ -328,6 +325,15 @@ var ModalBox = createReactClass({
     var animEvt = Animated.event([null, {customY: this.state.position}]);
 
     var onPanMove = (evt, state) => {
+      //console.log(state)
+      //console.log('onPanMove')
+      let dx = Math.abs(state.dx)
+      let dy = Math.abs(state.dy)
+      if (dx > dy)
+      {
+        //console.log('horizontal swipe')
+        return
+      }
       var newClosingState = this.props.entry === 'top' ? -state.dy > this.props.swipeThreshold : state.dy > this.props.swipeThreshold;
       if (this.props.entry === 'top' ? state.dy > 0 : state.dy < 0) return;
       if (newClosingState != closingState && this.props.onClosingState)
@@ -339,6 +345,8 @@ var ModalBox = createReactClass({
     };
 
     var onPanStart = (evt, state) => {
+      //console.log(state)
+      //console.log('onPanStart')
       if (!this.props.swipeToClose || this.props.isDisabled || (this.props.swipeArea && (evt.nativeEvent.pageY - this.state.positionDest) > this.props.swipeArea)) {
         inSwipeArea = false;
         return false;
@@ -347,12 +355,96 @@ var ModalBox = createReactClass({
       return true;
     };
 
+    var startShouldSetPanResponder = (evt, state) => {
+      //console.log('startShouldSetPanResponder')
+    }
+
+    var startShouldSetPanResponderCapture = (evt, state) => {
+      //console.log(evt.nativeEvent)
+      //console.log(state)
+      //console.log('startShouldSetPanResponderCapture')
+    }
+
+    var moveShouldSetPanResponder = (evt, state) => {
+      //console.log(evt.nativeEvent)
+      //console.log(state)
+      //console.log('moveShouldSetPanResponder')
+      let dx = Math.abs(state.dx)
+      let dy = Math.abs(state.dy)
+      if (dx > dy)
+      {
+        //console.log('horizontal')
+        return false
+      }
+      if (dy > dx)
+      {
+        //console.log('vertical')
+        return true
+      }
+    }
+
+    var moveShouldSetPanResponderCapture = (evt, state) => {
+      //console.log('moveShouldSetPanResponderCapture')
+    }
+
+    var panResponderGrant = (evt, state) => {
+      //console.log('panResponderGrant')
+    }
+
+    var panResponderMove = (evt, state) => {
+      //console.log('panResponderMove')
+      var newClosingState = this.props.entry === 'top' ? -state.dy > this.props.swipeThreshold : state.dy > this.props.swipeThreshold;
+      if (this.props.entry === 'top' ? state.dy > 0 : state.dy < 0) return;
+      if (newClosingState != closingState && this.props.onClosingState)
+        this.props.onClosingState(newClosingState);
+      closingState = newClosingState;
+      state.customY = state.dy + this.state.positionDest;
+
+      animEvt(evt, state);
+    }
+
+    var panResponderTerminationRequest = (evt, state) => {
+      //console.log('panResponderTerminationRequest')
+    }
+
+    var panResponderRelease = (evt, state) => {
+      //console.log('panResponderRelease')
+      //if (!inSwipeArea) return;
+      //inSwipeArea = false;
+      if (this.props.entry === 'top' ? -state.dy > this.props.swipeThreshold : state.dy > this.props.swipeThreshold)
+      {
+        //console.log('animateClose')
+        this.animateClose();
+      }
+      else
+      {
+        //console.log('animOpen')
+        this.animateOpen();
+      }
+    }
+
+    var panResponderTerminate = (evt, state) => {
+      //console.log('panResponderTerminate')
+    }
+
     this.state.pan = PanResponder.create({
+      onStartShouldSetPanResponder: startShouldSetPanResponder,
+      onStartShouldSetPanResponderCapture: startShouldSetPanResponderCapture,
+      onMoveShouldSetPanResponder: moveShouldSetPanResponder,
+      onMoveShouldSetPanResponderCapture: moveShouldSetPanResponderCapture,
+      onPanResponderGrant: panResponderGrant,
+      onPanResponderMove: panResponderMove,
+      onPanResponderTerminationRequest: panResponderTerminationRequest,
+      onPanResponderRelease: panResponderRelease,
+      onPanResponderTerminate: panResponderTerminate,
+    })
+
+    /*this.state.pan = PanResponder.create({
       onStartShouldSetPanResponder: onPanStart,
       onPanResponderMove: onPanMove,
       onPanResponderRelease: onPanRelease,
       onPanResponderTerminate: onPanRelease,
-    });
+    });*/
   },
 
   /*
@@ -439,8 +531,10 @@ var ModalBox = createReactClass({
     if (!visible) return <View/>
 
     var content = (
-      <View style={[styles.transparent, styles.absolute]} pointerEvents={'box-none'}>
-        <View style={{ flex: 1 }} pointerEvents={'box-none'} onLayout={this.onContainerLayout}>
+      <View
+        style={[styles.transparent, styles.absolute]}
+        pointerEvents={'box-none'}>
+        <View style={{ flex: 1 }} onLayout={this.onContainerLayout}>
           {visible && this.renderBackdrop()}
           {visible && this.renderContent()}
         </View>
@@ -448,7 +542,7 @@ var ModalBox = createReactClass({
     )
 
     if (!this.props.coverScreen) return content;
-
+    
     return (
       <Modal onRequestClose={() => this.close()} supportedOrientations={['landscape', 'portrait']} transparent visible={visible}>
         {content}
