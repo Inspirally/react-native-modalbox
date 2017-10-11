@@ -369,6 +369,10 @@ var ModalBox = React.createClass({
       //console.log(evt.nativeEvent)
       //console.log(state)
       //console.log('moveShouldSetPanResponder')
+      if (!this.props.swipeToClose)
+      {
+        return false
+      }
       let dx = Math.abs(state.dx)
       let dy = Math.abs(state.dy)
       if (dx > dy)
